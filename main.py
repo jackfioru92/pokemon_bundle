@@ -225,6 +225,16 @@ async def invia_messaggio_telegram(testo, chat_id, token):
             await bot.send_message(chat_id=chat_id, text=escape_markdown(parte), parse_mode="MarkdownV2")
 
 
+def invia_messaggio_discord(testo, webhook_url):
+    import requests
+    data = {"content": testo}
+    response = requests.post(webhook_url, json=data)
+    if response.status_code == 204:
+        print("✅ Messaggio inviato su Discord!")
+    else:
+        print(f"❌ Errore invio Discord: {response.status_code} - {response.text}")
+
+
 # LOOP PRINCIPALE
 database = carica_database()
 
@@ -262,6 +272,11 @@ while True:
         testo_telegram = "\n".join(testi_da_copiare)
         asyncio.run(invia_messaggio_telegram(testo_telegram, TELEGRAM_CHAT_ID, TELEGRAM_TOKEN))
         print("✅ Messaggio inviato su Telegram!")
+
+        # INVIO SU DISCORD
+        DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1392061102103334942/acUiBLzNWSwWbu_EzruFew0Pky225J-HYC3RU1zS0WPfyP-s3dhsDaxm8_ftsZLLLeor"
+        testo_discord = "\n\n".join(testi_da_copiare)
+        invia_messaggio_discord(testo_discord, DISCORD_WEBHOOK_URL)
     else:
         print("\nℹ️ Nessun prodotto da condividere su WhatsApp.")
 

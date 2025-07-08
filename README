@@ -83,9 +83,20 @@ R: Avvia una chat con il bot, poi leggi il log o usa un bot come [userinfobot](h
 - **Il bot non trova offerte**  
   Verifica che le parole chiave e i termini di ricerca siano corretti e che Amazon mostri risultati per quelle ricerche.
 
-## Esempio di notifica
+## Invio automatico su Discord
 
-![Esempio notifica Telegram](docs/telegram_example.png)
+Il bot invia automaticamente le offerte anche su un canale Discord tramite **webhook**.
+
+### Come configurare
+
+1. **Crea un webhook Discord**  
+   Vai nelle impostazioni del canale Discord dove vuoi ricevere i messaggi, clicca su “Integrazioni” → “Webhook” → “Nuovo Webhook” e copia l’URL.
+
+2. **Inserisci l’URL nel codice**  
+   Nel file `main.py`, imposta la variabile `DISCORD_WEBHOOK_URL` con l’URL del tuo webhook Discord.
+
+3. **Risultato**  
+   Ogni volta che vengono trovate nuove offerte o cali di prezzo, il bot invierà automaticamente un messaggio anche su Discord, oltre che su Telegram e WhatsApp.
 
 ---
 
