@@ -1,0 +1,92 @@
+# Pokémon Bundle Bot
+
+Bot Python per il monitoraggio automatico delle offerte Pokémon su Amazon, con invio notifiche su Telegram e generazione file per WhatsApp.
+
+![Python](https://img.shields.io/badge/python-3.8%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+## Funzionalità
+
+- Cerca automaticamente prodotti Pokémon su Amazon per una lista di termini combinati (es: "Pokemon 151 Box", "Pokemon Tempesta Argentata Etb", ecc).
+- Filtra i risultati per parole chiave rilevanti.
+- Notifica solo il primo prodotto trovato per ogni ricerca.
+- Confronta i prodotti trovati con uno storico (`prodotti_database.json`):
+  - Notifica solo nuovi prodotti, cali di prezzo (solo se > 5€), ritorni di disponibilità.
+  - Se il calo di prezzo è superiore a 20€, aggiunge una faccina shockata 😱.
+- Invia le offerte su un gruppo Telegram tramite bot.
+- Salva ogni lista di offerte in un file WhatsApp con timestamp.
+- Frequenza automatica: ogni 20 minuti di giorno, ogni 2 ore di notte.
+
+## Requisiti
+
+- Python 3.8+
+- Un bot Telegram (token da BotFather)
+- Librerie Python:
+  - requests
+  - beautifulsoup4
+  - lxml
+  - fake-useragent
+  - python-telegram-bot
+
+Installa tutto con:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Configurazione
+
+1. **Imposta il tuo tag affiliato Amazon**  
+   Modifica la variabile `AFFILIATE_TAG` nel file `main.py` con il tuo codice affiliato.
+
+2. **Imposta il token e chat_id Telegram**  
+   Modifica le variabili `TELEGRAM_TOKEN` e `TELEGRAM_CHAT_ID` con i dati del tuo bot e del gruppo.
+
+3. **Personalizza le ricerche**  
+   Modifica le liste `PRINCIPALI` e `TIPOLOGIE` per cambiare i termini di ricerca.
+
+## Avvio
+
+Lancia lo script:
+
+```bash
+python main.py
+```
+
+Il bot girerà in automatico, salvando ogni lista di offerte in un file tipo `prodotti_whatsapp_YYYY-MM-DD_HH-MM-SS.txt` e inviando le offerte su Telegram.
+
+## Note
+
+- Il database dei prodotti è salvato in `prodotti_database.json` (non committare questo file se vuoi evitare dati personali).
+- Il filtro sulle parole chiave può essere personalizzato nella lista `PAROLE_CHIAVE`.
+- Il bot ignora cali di prezzo inferiori a 5€ e segnala con 😱 cali superiori a 20€.
+
+## FAQ
+
+**D: Il bot trova prodotti non Pokémon, come posso migliorare il filtro?**  
+R: Personalizza la lista `PAROLE_CHIAVE` in `main.py` per includere solo termini rilevanti.
+
+**D: Come cambio la frequenza delle scansioni?**  
+R: Modifica la logica di `time.sleep()` in fondo al ciclo principale.
+
+**D: Dove trovo il mio chat_id Telegram?**  
+R: Avvia una chat con il bot, poi leggi il log o usa un bot come [userinfobot](https://t.me/userinfobot).
+
+## Troubleshooting
+
+- **Errore `ModuleNotFoundError`**  
+  Installa le dipendenze con `pip install -r requirements.txt`.
+
+- **Errore Telegram `Can't parse entities`**  
+  Assicurati che i caratteri speciali siano escapati correttamente per MarkdownV2.
+
+- **Il bot non trova offerte**  
+  Verifica che le parole chiave e i termini di ricerca siano corretti e che Amazon mostri risultati per quelle ricerche.
+
+## Esempio di notifica
+
+![Esempio notifica Telegram](docs/telegram_example.png)
+
+---
+
+**Autore:** [jackfioru92](https://github.com/jackfioru92)
