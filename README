@@ -57,7 +57,7 @@ Il bot girerà in automatico, salvando ogni lista di offerte in un file tipo `pr
 
 ## Note
 
-- Il database dei prodotti è salvato in `prodotti_database.json` (non committare questo file se vuoi evitare dati personali).
+- Il database dei prodotti è salvato in `prodotti_database.json`.
 - Il filtro sulle parole chiave può essere personalizzato nella lista `PAROLE_CHIAVE`.
 - Il bot ignora cali di prezzo inferiori a 5€ e segnala con 😱 cali superiori a 20€.
 
