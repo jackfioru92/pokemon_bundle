@@ -38,7 +38,7 @@ RICERCHE_SINGOLE = [
 SEARCH_TERMS = [f"pokemon {p} {t}".strip() for p in PRINCIPALI for t in TIPOLOGIE] + RICERCHE_SINGOLE
 DATABASE_FILE = "prodotti_database.json"
 
-PAROLE_CHIAVE = ["pokemon", "pokémon", "scarlatto", "violetto", "booster", "collezione"]
+PAROLE_CHIAVE = ["pokemon", "pokémon", "scarlatto", "violetto", "booster", "collezione", "allenatore", "fuoriclasse", "tcg", "scatola", "GCC"]
 
 def get_headers():
     ua = UserAgent()
@@ -274,14 +274,15 @@ while True:
         print(f"\n✅ File {filename} creato con i prodotti da condividere!")
 
         # INVIO SU TELEGRAM
-        TELEGRAM_TOKEN = "7958892759:AAFfomwI33kRy6-4oWKwr7FMgrAHm13I2x8"
-        TELEGRAM_CHAT_ID = -1002611938888
+        with open("config_secret.json", "r", encoding="utf-8") as f:
+            config = json.load(f)
+        TELEGRAM_TOKEN = config["TELEGRAM_TOKEN"]
+        TELEGRAM_CHAT_ID = config["TELEGRAM_CHAT_ID"]
         testo_telegram = "\n".join(testi_da_copiare)
         asyncio.run(invia_messaggio_telegram(testo_telegram, TELEGRAM_CHAT_ID, TELEGRAM_TOKEN))
-        print("✅ Messaggio inviato su Telegram!")
 
         # INVIO SU DISCORD
-        DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1392061102103334942/acUiBLzNWSwWbu_EzruFew0Pky225J-HYC3RU1zS0WPfyP-s3dhsDaxm8_ftsZLLLeor"
+        DISCORD_WEBHOOK_URL = config["DISCORD_WEBHOOK_URL"]
         testo_discord = "\n\n".join(testi_da_copiare)
         invia_messaggio_discord(testo_discord, DISCORD_WEBHOOK_URL)
     else:
@@ -297,5 +298,5 @@ while True:
         print("Attendo 2 ore prima della prossima scansione...\n")
         time.sleep(7200)  # 2 ore
     else:
-        print("Attendo 20 minuti prima della prossima scansione...\n")
-        time.sleep(1200)  # 20 minuti
+        print("Attendo 10 minuti prima della prossima scansione...\n")
+        time.sleep(600)  # 10 minuti
