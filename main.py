@@ -7,7 +7,7 @@ import telegram
 import asyncio
 
 # CONFIGURAZIONI
-AFFILIATE_TAG = "pokemonbundle-21"  # il tuo codice affiliato Amazon
+AFFILIATE_TAG = "pokemonbundle-21"
 PRINCIPALI = [
     "151",
     "Evoluzioni prismatiche",
@@ -28,7 +28,14 @@ TIPOLOGIE = [
     "Mini tin"
 ]
 
-SEARCH_TERMS = [f"pokemon {p} {t}".strip() for p in PRINCIPALI for t in TIPOLOGIE]
+RICERCHE_SINGOLE = [
+    "Pokémon GCC set allenatore",
+    "Pokémon GCC italiano set allenatori",
+    "Pokémon Allenatore Fuoriclasse",
+    "Pokémon TCG Violet Scatola Allenatore",
+]
+
+SEARCH_TERMS = [f"pokemon {p} {t}".strip() for p in PRINCIPALI for t in TIPOLOGIE] + RICERCHE_SINGOLE
 DATABASE_FILE = "prodotti_database.json"
 
 PAROLE_CHIAVE = ["pokemon", "pokémon", "scarlatto", "violetto", "booster", "collezione"]
@@ -128,14 +135,14 @@ def confronta_e_filtra_prodotto(asin, titolo, prezzo, img_url, link, database):
             messaggio = f"🔥 PRODOTTO TORNATO DISPONIBILE! 🔥\nEra non disponibile, ora costa {prezzo}"
         elif (prezzo_numerico is not None and vecchio_prezzo is not None and prezzo_numerico < vecchio_prezzo):
             risparmio = vecchio_prezzo - prezzo_numerico
-            if risparmio < 5:
-                # Non notificare cali di prezzo inferiori a 5 euro
+            if risparmio < 2:
+                # Non notificare cali di prezzo inferiori a 2 euro
                 stato = None
                 messaggio = None
             else:
                 stato = 'CALO_PREZZO'
                 shock = " 😱" if risparmio >= 20 else ""
-                messaggio = f"PREZZO SHOCK! 💰{shock}\nDa {vecchio_prezzo_str} a {prezzo}\nRisparmio: €{risparmio:.2f}"
+                messaggio = f"CALO DI PREZZO! 💰{shock}\nDa {vecchio_prezzo_str} a {prezzo}\nRisparmio: €{risparmio:.2f}"
         elif prezzo == vecchio_prezzo_str:
             # Nessuna novità, non inviare nulla
             return None
