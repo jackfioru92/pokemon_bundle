@@ -64,9 +64,16 @@ def estrai_prodotti(search_term):
 
         if titolo_el and prezzo_el and img_el:
             titolo = titolo_el.text.strip()
+            
+            # FILTRO: esclude raccoglitori/album/porta carte
+            parole_da_escludere = ["raccoglitore", "album", "porta carte", "binder", "cartella", "custodia", "scatola porta"]
+            if any(parola.lower() in titolo.lower() for parola in parole_da_escludere):
+                continue
+                
             # FILTRO: accetta solo se almeno una parola chiave è nel titolo
             if not any(kw.lower() in titolo.lower() for kw in PAROLE_CHIAVE):
                 continue
+                
             prezzo = prezzo_el.text.strip()
             img_url = img_el.get("src")
             link_affiliato = (
