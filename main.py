@@ -208,38 +208,66 @@ def genera_testo_offerta_avanzato(prodotto_info, search_term):
     return base_text
 
 
-async def invia_messaggio_telegram(testo, chat_id, token):
-    from telegram import Bot
-    MAX_LEN = 4096
+async def invia_messaggio_telegram(testi_da_copiare, chat_id, token):
+    from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
     bot = Bot(token=token)
-    # Escapa qui il testo!
+    
     def escape_markdown(text):
         escape_chars = r"_*[]()~`>#+-=|{}.!"
         return ''.join(['\\' + c if c in escape_chars else c for c in text])
-    if len(testo) <= MAX_LEN:
-        await bot.send_message(chat_id=chat_id, text=escape_markdown(testo), parse_mode="MarkdownV2")
-    else:
-        parti = []
-        while len(testo) > MAX_LEN:
-            split_idx = testo.rfind('\n', 0, MAX_LEN)
-            if split_idx == -1:
-                split_idx = MAX_LEN
-            parti.append(testo[:split_idx])
-            testo = testo[split_idx:]
-        if testo:
-            parti.append(testo)
-        for parte in parti:
-            await bot.send_message(chat_id=chat_id, text=escape_markdown(parte), parse_mode="MarkdownV2")
+    
+    for testo_con_link in testi_da_copiare:
+        # Estrai il link dal testo
+        lines = testo_con_link.split('\n')
+        link_line = [line for line in lines if line.startswith('🔗')]
+        if link_line:
+            link_originale = link_line[0].replace('🔗 ', '').strip()
+            # Crea link al carrello Amazon
+            asin = link_originale.split('/dp/')[1].split('/')[0]
+            link_carrello = f"https://www.amazon.it/gp/aws/cart/add.html?ASIN.1={asin}&Quantity.1=1&tag={AFFILIATE_TAG}"
+            
+            # Rimuovi la riga del link dal testo
+            testo_senza_link = '\n'.join([line for line in lines if not line.startswith('🔗')])
+            
+            # Crea il bottone
+            keyboard = [[InlineKeyboardButton("🛒 Acquista Subito", url=link_carrello)]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            
+            await bot.send_message(
+                chat_id=chat_id, 
+                text=escape_markdown(testo_senza_link), 
+                parse_mode="MarkdownV2",
+                reply_markup=reply_markup
+            )
 
 
-def invia_messaggio_discord(testo, webhook_url):
+def invia_messaggio_discord(testi_da_copiare, webhook_url):
     import requests
-    data = {"content": testo}
-    response = requests.post(webhook_url, json=data)
-    if response.status_code == 204:
-        print("✅ Messaggio inviato su Discord!")
-    else:
-        print(f"❌ Errore invio Discord: {response.status_code} - {response.text}")
+    
+    messaggi_discord = []
+    for testo_con_link in testi_da_copiare:
+        # Estrai il link dal testo
+        lines = testo_con_link.split('\n')
+        link_line = [line for line in lines if line.startswith('🔗')]
+        if link_line:
+            link_originale = link_line[0].replace('🔗 ', '').strip()
+            # Crea link al carrello Amazon
+            asin = link_originale.split('/dp/')[1].split('/')[0]
+            link_carrello = f"https://www.amazon.it/gp/aws/cart/add.html?ASIN.1={asin}&Quantity.1=1&tag={AFFILIATE_TAG}"
+            
+            # Rimuovi la riga del link dal testo e aggiungi bottone
+            testo_senza_link = '\n'.join([line for line in lines if not line.startswith('🔗')])
+            testo_con_bottone = f"{testo_senza_link}\n\n[🛒 **Acquista Subito**]({link_carrello})"
+            messaggi_discord.append(testo_con_bottone)
+    
+    if messaggi_discord:
+        testo_finale = "\n\n".join(messaggi_discord)
+        data = {"content": testo_finale}
+        response = requests.post(webhook_url, json=data)
+        if response.status_code == 204:
+            print("✅ Messaggio inviato su Discord!")
+        else:
+            print(f"❌ Errore invio Discord: {response.status_code} - {response.text}")
 
 
 # LOOP PRINCIPALE
@@ -279,12 +307,12 @@ while True:
         TELEGRAM_TOKEN = config["TELEGRAM_TOKEN"]
         TELEGRAM_CHAT_ID = config["TELEGRAM_CHAT_ID"]
         testo_telegram = "\n".join(testi_da_copiare)
-        asyncio.run(invia_messaggio_telegram(testo_telegram, TELEGRAM_CHAT_ID, TELEGRAM_TOKEN))
+        asyncio.run(invia_messaggio_telegram(testi_da_copiare, TELEGRAM_CHAT_ID, TELEGRAM_TOKEN))
 
         # INVIO SU DISCORD
         DISCORD_WEBHOOK_URL = config["DISCORD_WEBHOOK_URL"]
         testo_discord = "\n\n".join(testi_da_copiare)
-        invia_messaggio_discord(testo_discord, DISCORD_WEBHOOK_URL)
+        invia_messaggio_discord(testi_da_copiare, DISCORD_WEBHOOK_URL)
     else:
         print("\nℹ️ Nessun prodotto da condividere su WhatsApp.")
 
@@ -298,5 +326,5 @@ while True:
         print("Attendo 2 ore prima della prossima scansione...\n")
         time.sleep(7200)  # 2 ore
     else:
-        print("Attendo 10 minuti prima della prossima scansione...\n")
-        time.sleep(600)  # 10 minuti
+        print("Attendo 5 minuti prima della prossima scansione...\n")
+        time.sleep(300)  # 5 minuti
