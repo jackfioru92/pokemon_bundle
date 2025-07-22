@@ -66,7 +66,7 @@ def estrai_prodotti(search_term):
             titolo = titolo_el.text.strip()
             
             # FILTRO: esclude raccoglitori/album/porta carte
-            parole_da_escludere = ["raccoglitore", "album", "porta carte", "binder", "cartella", "custodia", "scatola porta"]
+            parole_da_escludere = ["raccoglitore", "album", "porta carte", "binder", "cartella", "custodia", "scatola porta", "dispenser"]
             if any(parola.lower() in titolo.lower() for parola in parole_da_escludere):
                 continue
                 
