@@ -209,7 +209,8 @@ def genera_testo_offerta_avanzato(prodotto_info, search_term):
 📦 *{prodotto_info['titolo']}*
 💰 Prezzo: {prodotto_info['prezzo']}
 🔗 {prodotto_info['link']}
-"""
+
+#linkaffiliato"""
     if 'messaggio' in prodotto_info and prodotto_info['messaggio']:
         base_text = f"{prodotto_info['messaggio']}\n\n{base_text}"
     return base_text
@@ -300,32 +301,24 @@ while True:
     print("DEBUG - Database aggiornato:")
     print(json.dumps(database, indent=2, ensure_ascii=False))
 
-    # Salva i risultati da copiare su WhatsApp in un file txt
+    # INVIO SU TELEGRAM E DISCORD (solo se ci sono offerte)
     if testi_da_copiare:
-        now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"prodotti_whatsapp_{now}.txt"
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write("\n".join(testi_da_copiare))
-        print(f"\n✅ File {filename} creato con i prodotti da condividere!")
-
-        # INVIO SU TELEGRAM
         with open("config_secret.json", "r", encoding="utf-8") as f:
             config = json.load(f)
+        
+        # TELEGRAM
         TELEGRAM_TOKEN = config["TELEGRAM_TOKEN"]
         TELEGRAM_CHAT_ID = config["TELEGRAM_CHAT_ID"]
-        testo_telegram = "\n".join(testi_da_copiare)
         asyncio.run(invia_messaggio_telegram(testi_da_copiare, TELEGRAM_CHAT_ID, TELEGRAM_TOKEN))
+        print("✅ Messaggio inviato su Telegram!")
 
-        # INVIO SU DISCORD
+        # DISCORD
         DISCORD_WEBHOOK_URL = config["DISCORD_WEBHOOK_URL"]
-        testo_discord = "\n\n".join(testi_da_copiare)
         invia_messaggio_discord(testi_da_copiare, DISCORD_WEBHOOK_URL)
     else:
-        print("\nℹ️ Nessun prodotto da condividere su WhatsApp.")
+        print("\nℹ️ Nessuna offerta da inviare.")
 
     print("\n✅ Scansione completata! Database aggiornato.")
-    print("DEBUG - Database aggiornato:")
-    print(json.dumps(database, indent=2, ensure_ascii=False))
 
     # --- LOGICA PER LA FREQUENZA ---
     ora = datetime.now().hour
