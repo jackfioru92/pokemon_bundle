@@ -204,19 +204,58 @@ def confronta_e_filtra_prodotto(asin, titolo, prezzo, img_url, link, database):
 
 def genera_testo_offerta_avanzato(prodotto_info, search_term):
     """Genera il testo dell'offerta con informazioni aggiuntive e titoletto"""
-    base_text = f"""🔎 *{search_term.title()}*
+    
+    # Emoji per il tipo di ricerca
+    emoji_categoria = "🎯"
+    if "151" in search_term.lower():
+        emoji_categoria = "✨"
+    elif "evoluzioni" in search_term.lower():
+        emoji_categoria = "🌟"
+    elif "set allenatore" in search_term.lower():
+        emoji_categoria = "�‍🏫"
+    elif "tin" in search_term.lower():
+        emoji_categoria = "🥫"
+    elif "box" in search_term.lower():
+        emoji_categoria = "📦"
+    
+    # Messaggio base con design migliorato
+    base_text = f"""━━━━━━━━━━━━━━━━━━━━━━━━━
+{emoji_categoria} **{search_term.upper()}** {emoji_categoria}
+━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📦 *{prodotto_info['titolo']}*
-💰 Prezzo: {prodotto_info['prezzo']}
-🔗 {prodotto_info['link']}
+🎮 **{prodotto_info['titolo']}**
 
-#linkaffiliato"""
+💰 **Prezzo:** {prodotto_info['prezzo']}
+🔗 **Link:** {prodotto_info['link']}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━
+🔥 #PokemonDeals #LinkAffiliato
+━━━━━━━━━━━━━━━━━━━━━━━━━"""
+    
     if 'messaggio' in prodotto_info and prodotto_info['messaggio']:
-        base_text = f"{prodotto_info['messaggio']}\n\n{base_text}"
+        # Migliora anche i messaggi di stato
+        messaggio = prodotto_info['messaggio']
+        if "NUOVO PRODOTTO" in messaggio:
+            messaggio_migliorato = "🆕 **NUOVA SCOPERTA!** 🆕\n✨ Prodotto appena trovato!"
+        elif "CALO DI PREZZO" in messaggio:
+            if "😱" in messaggio:
+                messaggio_migliorato = f"💥 **SUPER SCONTO!** 💥 {messaggio.split('!')[0].split('💰')[1].strip()}\n{messaggio.split('Da')[1] if 'Da' in messaggio else ''}"
+            else:
+                messaggio_migliorato = f"💰 **PREZZO IN CALO!** 💰\n📉 {messaggio.split('Da')[1] if 'Da' in messaggio else messaggio}"
+        elif "TORNATO DISPONIBILE" in messaggio:
+            messaggio_migliorato = "🔥 **DI NUOVO DISPONIBILE!** 🔥\n🎯 Non perdere questa occasione!"
+        else:
+            messaggio_migliorato = messaggio
+            
+        base_text = f"""🚨 **ALERT POKEMON** 🚨
+{messaggio_migliorato}
+
+{base_text}"""
+    
     return base_text
 
 
-async def invia_messaggio_telegram(testi_da_copiare, chat_id, token):
+async def invia_messaggio_telegram(prodotti_per_invio, chat_id, token):
     from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
     bot = Bot(token=token)
     
@@ -224,7 +263,10 @@ async def invia_messaggio_telegram(testi_da_copiare, chat_id, token):
         escape_chars = r"_*[]()~`>#+-=|{}.!"
         return ''.join(['\\' + c if c in escape_chars else c for c in text])
     
-    for testo_con_link in testi_da_copiare:
+    for prodotto in prodotti_per_invio:
+        testo_con_link = prodotto['testo']
+        img_url = prodotto['img_url']
+        
         # Estrai il link dal testo
         lines = testo_con_link.split('\n')
         link_line = [line for line in lines if line.startswith('🔗')]
@@ -241,41 +283,78 @@ async def invia_messaggio_telegram(testi_da_copiare, chat_id, token):
             keyboard = [[InlineKeyboardButton("🛒 Acquista Subito", url=link_carrello)]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            await bot.send_message(
-                chat_id=chat_id, 
-                text=escape_markdown(testo_senza_link), 
-                parse_mode="MarkdownV2",
-                reply_markup=reply_markup
-            )
+            # Invia foto con caption
+            try:
+                await bot.send_photo(
+                    chat_id=chat_id,
+                    photo=img_url,
+                    caption=escape_markdown(testo_senza_link),
+                    parse_mode="MarkdownV2",
+                    reply_markup=reply_markup
+                )
+            except Exception as e:
+                print(f"Errore invio foto Telegram: {e}")
+                # Fallback: invia solo testo se la foto non funziona
+                await bot.send_message(
+                    chat_id=chat_id, 
+                    text=escape_markdown(testo_senza_link), 
+                    parse_mode="MarkdownV2",
+                    reply_markup=reply_markup
+                )
 
 
-def invia_messaggio_discord(testi_da_copiare, webhook_url):
+def invia_messaggio_discord(prodotti_per_invio, webhook_url):
     import requests
     
-    messaggi_discord = []
-    for testo_con_link in testi_da_copiare:
+    for prodotto in prodotti_per_invio:
+        testo_con_link = prodotto['testo']
+        img_url = prodotto['img_url']
+        
         # Estrai il link dal testo
         lines = testo_con_link.split('\n')
         link_line = [line for line in lines if line.startswith('🔗')]
         if link_line:
-            link_originale = link_line[0].replace('🔗 ', '').strip()
+            link_originale = link_line[0].replace('🔗 **Link:** ', '').strip()
             # Crea link al carrello Amazon
             asin = link_originale.split('/dp/')[1].split('/')[0]
             link_carrello = f"https://www.amazon.it/gp/aws/cart/add.html?ASIN.1={asin}&Quantity.1=1&tag={AFFILIATE_TAG}"
             
+            # Pulisci il testo per Discord (rimuovi alcuni markdown non supportati)
+            testo_pulito = testo_con_link.replace('**', '**').replace('━━━━━━━━━━━━━━━━━━━━━━━━━', '━━━━━━━━━━━━━━━━━━━')
+            
             # Rimuovi la riga del link dal testo e aggiungi bottone
-            testo_senza_link = '\n'.join([line for line in lines if not line.startswith('🔗')])
-            testo_con_bottone = f"{testo_senza_link}\n\n[🛒 **Acquista Subito**]({link_carrello})"
-            messaggi_discord.append(testo_con_bottone)
-    
-    if messaggi_discord:
-        testo_finale = "\n\n".join(messaggi_discord)
-        data = {"content": testo_finale}
-        response = requests.post(webhook_url, json=data)
-        if response.status_code == 204:
-            print("✅ Messaggio inviato su Discord!")
-        else:
-            print(f"❌ Errore invio Discord: {response.status_code} - {response.text}")
+            testo_senza_link = '\n'.join([line for line in testo_pulito.split('\n') if not line.startswith('🔗')])
+            testo_con_bottone = f"{testo_senza_link}\n\n[🛒 **ACQUISTA SUBITO**]({link_carrello})"
+            
+            # Crea l'embed con l'immagine e colori dinamici
+            embed_color = 0x00ff00  # Verde di default
+            if "SUPER SCONTO" in testo_con_link:
+                embed_color = 0xff0000  # Rosso per super sconti
+            elif "NUOVA SCOPERTA" in testo_con_link:
+                embed_color = 0x0099ff  # Blu per nuovi prodotti
+            elif "DI NUOVO DISPONIBILE" in testo_con_link:
+                embed_color = 0xff9900  # Arancione per prodotti tornati
+            
+            embed = {
+                "description": testo_con_bottone,
+                "image": {
+                    "url": img_url
+                },
+                "color": embed_color,
+                "footer": {
+                    "text": "🎮 Pokemon Bundle Bot | Offerte sempre aggiornate"
+                }
+            }
+            
+            data = {
+                "embeds": [embed]
+            }
+            
+            response = requests.post(webhook_url, json=data)
+            if response.status_code == 204:
+                print("✅ Messaggio inviato su Discord!")
+            else:
+                print(f"❌ Errore invio Discord: {response.status_code} - {response.text}")
 
 
 # LOOP PRINCIPALE
@@ -283,6 +362,7 @@ database = carica_database()
 
 while True:
     testi_da_copiare = []
+    prodotti_per_invio = []
     for term in SEARCH_TERMS:
         risultati = estrai_prodotti(term)
         if risultati:
@@ -292,6 +372,12 @@ while True:
                 testo = genera_testo_offerta_avanzato(prodotto_info, term)
                 print(testo)
                 testi_da_copiare.append(testo)
+                prodotti_per_invio.append({
+                    'testo': testo,
+                    'img_url': prodotto_info['img_url'],
+                    'link': prodotto_info['link'],
+                    'term': term
+                })
             else:
                 print("Nessun nuovo prodotto o cambio prezzo rilevato.\n")
         else:
@@ -302,19 +388,19 @@ while True:
     print(json.dumps(database, indent=2, ensure_ascii=False))
 
     # INVIO SU TELEGRAM E DISCORD (solo se ci sono offerte)
-    if testi_da_copiare:
+    if prodotti_per_invio:
         with open("config_secret.json", "r", encoding="utf-8") as f:
             config = json.load(f)
         
         # TELEGRAM
         TELEGRAM_TOKEN = config["TELEGRAM_TOKEN"]
         TELEGRAM_CHAT_ID = config["TELEGRAM_CHAT_ID"]
-        asyncio.run(invia_messaggio_telegram(testi_da_copiare, TELEGRAM_CHAT_ID, TELEGRAM_TOKEN))
+        asyncio.run(invia_messaggio_telegram(prodotti_per_invio, TELEGRAM_CHAT_ID, TELEGRAM_TOKEN))
         print("✅ Messaggio inviato su Telegram!")
 
         # DISCORD
         DISCORD_WEBHOOK_URL = config["DISCORD_WEBHOOK_URL"]
-        invia_messaggio_discord(testi_da_copiare, DISCORD_WEBHOOK_URL)
+        invia_messaggio_discord(prodotti_per_invio, DISCORD_WEBHOOK_URL)
     else:
         print("\nℹ️ Nessuna offerta da inviare.")
 
