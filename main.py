@@ -265,7 +265,6 @@ async def invia_messaggio_telegram(prodotti_per_invio, chat_id, token):
     
     for prodotto in prodotti_per_invio:
         testo_con_link = prodotto['testo']
-        img_url = prodotto['img_url']
         
         # Estrai il link dal testo
         lines = testo_con_link.split('\n')
@@ -283,24 +282,13 @@ async def invia_messaggio_telegram(prodotti_per_invio, chat_id, token):
             keyboard = [[InlineKeyboardButton("🛒 Acquista Subito", url=link_carrello)]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            # Invia foto con caption
-            try:
-                await bot.send_photo(
-                    chat_id=chat_id,
-                    photo=img_url,
-                    caption=escape_markdown(testo_senza_link),
-                    parse_mode="MarkdownV2",
-                    reply_markup=reply_markup
-                )
-            except Exception as e:
-                print(f"Errore invio foto Telegram: {e}")
-                # Fallback: invia solo testo se la foto non funziona
-                await bot.send_message(
-                    chat_id=chat_id, 
-                    text=escape_markdown(testo_senza_link), 
-                    parse_mode="MarkdownV2",
-                    reply_markup=reply_markup
-                )
+            # Invia solo messaggio di testo con bottone
+            await bot.send_message(
+                chat_id=chat_id, 
+                text=escape_markdown(testo_senza_link), 
+                parse_mode="MarkdownV2",
+                reply_markup=reply_markup
+            )
 
 
 def invia_messaggio_discord(prodotti_per_invio, webhook_url):
@@ -308,7 +296,6 @@ def invia_messaggio_discord(prodotti_per_invio, webhook_url):
     
     for prodotto in prodotti_per_invio:
         testo_con_link = prodotto['testo']
-        img_url = prodotto['img_url']
         
         # Estrai il link dal testo
         lines = testo_con_link.split('\n')
@@ -326,7 +313,7 @@ def invia_messaggio_discord(prodotti_per_invio, webhook_url):
             testo_senza_link = '\n'.join([line for line in testo_pulito.split('\n') if not line.startswith('🔗')])
             testo_con_bottone = f"{testo_senza_link}\n\n[🛒 **ACQUISTA SUBITO**]({link_carrello})"
             
-            # Crea l'embed con l'immagine e colori dinamici
+            # Crea l'embed senza immagine e con colori dinamici
             embed_color = 0x00ff00  # Verde di default
             if "SUPER SCONTO" in testo_con_link:
                 embed_color = 0xff0000  # Rosso per super sconti
@@ -337,9 +324,6 @@ def invia_messaggio_discord(prodotti_per_invio, webhook_url):
             
             embed = {
                 "description": testo_con_bottone,
-                "image": {
-                    "url": img_url
-                },
                 "color": embed_color,
                 "footer": {
                     "text": "🎮 Pokemon Bundle Bot | Offerte sempre aggiornate"
