@@ -50,8 +50,12 @@ def get_headers():
 
 def estrai_prodotti(search_term):
     url = f"https://www.amazon.it/s?k={quote(search_term)}"
-    res = requests.get(url, headers=get_headers())
-    soup = BeautifulSoup(res.text, "lxml")
+    try:
+        res = requests.get(url, headers=get_headers(), timeout=30)
+        soup = BeautifulSoup(res.text, "lxml")
+    except (requests.exceptions.RequestException, requests.exceptions.Timeout) as e:
+        print(f"❌ Errore di connessione per '{search_term}': {e}")
+        return []
 
     prodotti = []
     for item in soup.select('[data-asin]'):
@@ -239,9 +243,17 @@ def genera_testo_offerta_avanzato(prodotto_info, search_term):
             messaggio_migliorato = "🆕 **NUOVA SCOPERTA!** 🆕\n✨ Prodotto appena trovato!"
         elif "CALO DI PREZZO" in messaggio:
             if "😱" in messaggio:
-                messaggio_migliorato = f"💥 **SUPER SCONTO!** 💥 {messaggio.split('!')[0].split('💰')[1].strip()}\n{messaggio.split('Da')[1] if 'Da' in messaggio else ''}"
+                messaggio_migliorato = "💥 **SUPER SCONTO!** 💥\n🔥 Occasione imperdibile!"
+                if 'Da' in messaggio:
+                    dettagli = messaggio.split('Da')[1] if len(messaggio.split('Da')) > 1 else ""
+                    if dettagli:
+                        messaggio_migliorato += f"\n📉 {dettagli.strip()}"
             else:
-                messaggio_migliorato = f"💰 **PREZZO IN CALO!** 💰\n📉 {messaggio.split('Da')[1] if 'Da' in messaggio else messaggio}"
+                messaggio_migliorato = "💰 **PREZZO IN CALO!** 💰"
+                if 'Da' in messaggio:
+                    dettagli = messaggio.split('Da')[1] if len(messaggio.split('Da')) > 1 else ""
+                    if dettagli:
+                        messaggio_migliorato += f"\n📉 Da{dettagli.strip()}"
         elif "TORNATO DISPONIBILE" in messaggio:
             messaggio_migliorato = "🔥 **DI NUOVO DISPONIBILE!** 🔥\n🎯 Non perdere questa occasione!"
         else:
@@ -393,8 +405,15 @@ while True:
     # --- LOGICA PER LA FREQUENZA ---
     ora = datetime.now().hour
     if 0 <= ora < 9:
-        print("Attendo 2 ore prima della prossima scansione...\n")
-        time.sleep(7200)  # 2 ore
+        print("Attendo 2 ore prima della prossima scansione...")
+        for i in range(120, 0, -1):  # 120 minuti
+            print(f"⏰ Ancora {i} minuti...", end='\r')
+            time.sleep(60)
+        print()
     else:
-        print("Attendo 5 minuti prima della prossima scansione...\n")
-        time.sleep(300)  # 5 minuti
+        print("Attendo 5 minuti prima della prossima scansione...")
+        for i in range(5, 0, -1):  # 5 minuti
+            print(f"⏰ Ancora {i} minuti...", end='\r')
+            time.sleep(60)
+        print()
+    print("🔄 Riavvio scansione...\n")
