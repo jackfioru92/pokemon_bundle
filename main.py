@@ -79,7 +79,30 @@ def estrai_prodotti(search_term):
                 continue
                 
             prezzo = prezzo_el.text.strip()
+            
+            # Migliora la qualità dell'immagine
             img_url = img_el.get("src")
+            if img_url:
+                # Rimuovi parametri di ridimensionamento e migliora la qualità
+                if "images-amazon.com" in img_url:
+                    # Sostituisci le dimensioni piccole con quelle più grandi
+                    img_url = img_url.replace("_AC_UL320_", "_AC_UL640_")
+                    img_url = img_url.replace("_AC_UL160_", "_AC_UL640_")
+                    img_url = img_url.replace("_AC_UL400_", "_AC_UL640_")
+                    # Rimuovi altri parametri che limitano la qualità
+                    if "._" in img_url:
+                        img_url = img_url.split("._")[0] + ".jpg"
+                
+                # Se non è un'immagine valida, prova data-src
+                if not img_url or "data:image" in img_url:
+                    img_url = img_el.get("data-src") or img_el.get("data-a-dynamic-image")
+                    if img_url and "data-a-dynamic-image" in str(img_el):
+                        # Estrai l'URL dalla stringa JSON
+                        import re
+                        match = re.search(r'"(https://[^"]*images-amazon[^"]*)"', str(img_el))
+                        if match:
+                            img_url = match.group(1).replace("\\", "")
+            
             link_affiliato = (
                 f"https://www.amazon.it/dp/{asin}/?tag={AFFILIATE_TAG}"
             )
@@ -277,27 +300,24 @@ async def invia_messaggio_telegram(prodotti_per_invio, chat_id, token):
     
     for prodotto in prodotti_per_invio:
         testo_con_link = prodotto['testo']
+        img_url = prodotto.get('img_url')
         
         # Estrai il link dal testo
         lines = testo_con_link.split('\n')
         link_line = [line for line in lines if line.startswith('🔗')]
         if link_line:
             link_originale = link_line[0].replace('🔗 ', '').strip()
-            # Crea link al carrello Amazon
             asin = link_originale.split('/dp/')[1].split('/')[0]
             link_carrello = f"https://www.amazon.it/gp/aws/cart/add.html?ASIN.1={asin}&Quantity.1=1&tag={AFFILIATE_TAG}"
-            
-            # Rimuovi la riga del link dal testo
             testo_senza_link = '\n'.join([line for line in lines if not line.startswith('🔗')])
-            
-            # Crea il bottone
             keyboard = [[InlineKeyboardButton("🛒 Acquista Subito", url=link_carrello)]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             
-            # Invia solo messaggio di testo con bottone
-            await bot.send_message(
-                chat_id=chat_id, 
-                text=escape_markdown(testo_senza_link), 
+            # Invia la foto con didascalia e bottone
+            await bot.send_photo(
+                chat_id=chat_id,
+                photo=img_url,
+                caption=escape_markdown(testo_senza_link),
                 parse_mode="MarkdownV2",
                 reply_markup=reply_markup
             )
@@ -308,6 +328,7 @@ def invia_messaggio_discord(prodotti_per_invio, webhook_url):
     
     for prodotto in prodotti_per_invio:
         testo_con_link = prodotto['testo']
+        img_url = prodotto.get('img_url')
         
         # Estrai il link dal testo
         lines = testo_con_link.split('\n')
@@ -325,7 +346,7 @@ def invia_messaggio_discord(prodotti_per_invio, webhook_url):
             testo_senza_link = '\n'.join([line for line in testo_pulito.split('\n') if not line.startswith('🔗')])
             testo_con_bottone = f"{testo_senza_link}\n\n[🛒 **ACQUISTA SUBITO**]({link_carrello})"
             
-            # Crea l'embed senza immagine e con colori dinamici
+            # Crea l'embed con immagine e colori dinamici
             embed_color = 0x00ff00  # Verde di default
             if "SUPER SCONTO" in testo_con_link:
                 embed_color = 0xff0000  # Rosso per super sconti
@@ -337,6 +358,9 @@ def invia_messaggio_discord(prodotti_per_invio, webhook_url):
             embed = {
                 "description": testo_con_bottone,
                 "color": embed_color,
+                "image": {
+                    "url": img_url
+                },
                 "footer": {
                     "text": "🎮 Pokemon Bundle Bot | Offerte sempre aggiornate"
                 }
