@@ -15,7 +15,8 @@ PRINCIPALI = [
     "Origine perduta",
     "Evoluzioni eteree",
     "Astri lucenti",
-    "Tempesta argentata"
+    "Tempesta argentata",
+    "Scarlatto & violetto"
 ]
 
 TIPOLOGIE = [
@@ -33,12 +34,16 @@ RICERCHE_SINGOLE = [
     "Pokémon GCC italiano set allenatori",
     "Pokémon Allenatore Fuoriclasse",
     "Pokémon TCG Violet Scatola Allenatore",
+    "Pokémon: scatola da collezione Team Rocket - Persian-ex del GCC Pokémon",
+    "Pokémon: scatola da collezione Team Rocket - Nidoking-ex del GCC Pokémon",
+    "Collezione Mewtwo Ex del Team Rocket",
+    "Pokémon scatola da collezione Team Rocket Mewtwo ex del GCC Pokémon"
 ]
 
 SEARCH_TERMS = [f"pokemon {p} {t}".strip() for p in PRINCIPALI for t in TIPOLOGIE] + RICERCHE_SINGOLE
 DATABASE_FILE = "prodotti_database.json"
 
-PAROLE_CHIAVE = ["pokemon", "pokémon", "scarlatto", "violetto", "booster", "collezione", "allenatore", "fuoriclasse", "tcg", "scatola", "GCC"]
+PAROLE_CHIAVE = ["pokemon", "pokémon", "scarlatto", "violetto", "booster", "collezione", "allenatore", "fuoriclasse", "tcg", "scatola", "GCC","set","Rocket","allenatore","pokemon"]
 
 def get_headers():
     ua = UserAgent()
